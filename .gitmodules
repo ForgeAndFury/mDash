@@ -1,0 +1,9 @@
+[submodule "Backend/Dependencies/spdlog"]
+	path = Backend/Dependencies/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "Backend/Dependencies/fmt"]
+	path = Backend/Dependencies/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "Backend/Dependencies/drogon"]
+	path = Backend/Dependencies/drogon
+	url = https://github.com/drogonframework/drogon.git
