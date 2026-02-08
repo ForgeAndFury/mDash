@@ -35,5 +35,7 @@ rules.ninja
 # Build
 Build/
 Bin/
+build/
+bin/
 
 TODO.txt
