@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.28)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
 
 #--------------------------------------------------------------------
 # Source and executable
@@ -12,56 +15,51 @@ file(GLOB_RECURSE MDASH_SOURCE
     "Source/*.hxx"
 )
 
-# 3. Create the executable
-add_executable(mDash ${MDASH_SOURCE})
+add_executable(mdash ${MDASH_SOURCE})
 
 #--------------------------------------------------------------------
 # Compile definitions
 #--------------------------------------------------------------------
-target_compile_definitions(mDash
-    PUBLIC
-        $<$<CONFIG:Debug>:MDASH_BUILD_TYPE_DEBUG=1>
-        $<$<CONFIG:Release>:MDASH_BUILD_TYPE_RELEASE=1>
-        $<$<CONFIG:RelWithDebInfo>:MDASH_BUILD_TYPE_RELWITHDEBINFO=1>
-        # $<IF:$<CONFIG:Debug>,SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE,SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_WARN>
-
+target_compile_definitions(mdash PRIVATE
+    $<$<CONFIG:Debug>:MDASH_BUILD_TYPE_DEBUG=1>
+    $<$<CONFIG:Release>:MDASH_BUILD_TYPE_RELEASE=1>
+    $<$<CONFIG:RelWithDebInfo>:MDASH_BUILD_TYPE_RELWITHDEBINFO=1>
+    # $<IF:$<CONFIG:Debug>,SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE,SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_WARN>
 )
 
 #--------------------------------------------------------------------
 # Include dirs
 #--------------------------------------------------------------------
-target_include_directories(mDash PUBLIC
+target_include_directories(mdash PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Source
 )
 
 #--------------------------------------------------------------------
 # Dependencies
 #--------------------------------------------------------------------
-set(BUILD_SHARED_LIBS OFF)
 
-set(FMT_INSTALL OFF)
+# fmt
+set(FMT_INSTALL ON CACHE BOOL "Required because drogon and trantor need it" FORCE)
 add_subdirectory(Dependencies/fmt)
-target_link_libraries(mDash PRIVATE fmt::fmt)
 
-set(SPDLOG_FMT_EXTERNAL ON)
+# spdlog
+set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "Use external fmt library" FORCE)
+set(SPDLOG_INSTALL ON CACHE BOOL "Required because drogon and trantor need it" FORCE)
 add_subdirectory(Dependencies/spdlog)
-target_link_libraries(mDash PRIVATE spdlog::spdlog)
 
-set(JSONCPP_WITH_TESTS OFF)
-set(JSONCPP_WITH_CMAKE_PACKAGE OFF)
-set(BUILD_SHARED_LIBS OFF)
-set(BUILD_STATIC_LIBS ON)
-set(BUILD_OBJECT_LIBS OFF)
-add_subdirectory(Dependencies/jsoncpp)
-target_link_libraries(mDash PRIVATE jsoncpp::jsoncpp)
-
-set(BUILD_EXAMPLES OFF)
-set(USE_SPDLOG ON)
+# drogon
+set(BUILD_EXAMPLES OFF CACHE BOOL "Build drogon examples" FORCE)
 add_subdirectory(Dependencies/drogon)
 
+# link libraries
+target_link_libraries(mdash PRIVATE 
+    fmt::fmt
+    spdlog::spdlog
+    drogon
+)
 
-# # 5. Copy the Frontend files to the build directory so the app can find them
-# add_custom_command(TARGET mDash POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#     ${CMAKE_SOURCE_DIR}/Source/Frontend/public
-#     ${CMAKE_BINARY_DIR}/public)
+# Hack for drogon and trantor spdlog support
+target_link_libraries(drogon PUBLIC spdlog::spdlog)
+target_compile_definitions(drogon PUBLIC DROGON_SPDLOG_SUPPORT SPDLOG_FMT_EXTERNAL)
+target_link_libraries(trantor PUBLIC spdlog::spdlog)
+target_compile_definitions(trantor PUBLIC TRANTOR_SPDLOG_SUPPORT SPDLOG_FMT_EXTERNAL)
